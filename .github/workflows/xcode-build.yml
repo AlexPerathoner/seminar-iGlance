@@ -24,6 +24,8 @@ jobs:
         uses: AlexPerathoner/workflow-telemetry-action@v0.9
         with:
           metric_frequency_thousands_of_second: 100
+      - name: Cocoa
+        run: cd iGlance; pod install; cd ..
       - name: Build and Test
         continue-on-error: true
         id: run-tests
