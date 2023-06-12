@@ -17,15 +17,37 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
+        with:
+          submodules: 'recursive'
       - name: Switch Xcode version
         run: sudo xcode-select -s "/Applications/Xcode_14.2.app"
       - name: Collect Workflow Telemetry
         uses: AlexPerathoner/workflow-telemetry-action@v0.9
         with:
           metric_frequency_thousands_of_second: 100
-      - name: Cocoa
-        run: cd ./iGlance && pod install && cd ./iGlance && carthage update
+      - name: get pods home directory from cache
+        uses: actions/cache@v1
+        with:
+          path: ./iGlance/cocoaPodsHomeDir
+          key: ${{ runner.os }}--pods-homeDir-key-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}--pods-homeDir-key-
+      - name: get installed pods from cache
+        uses: actions/cache@v1
+        with:
+          path: ./iGlance/Pods
+          key: ${{ runner.os }}--pods-key-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}--pods-key-
+      - name: execute 'pod install' 
+        working-directory: ./iGlance
+        run: pod install
+        env:
+          CP_HOME_DIR: ./cocoaPodsHomeDir
+      # update carthage
+      - name: execute 'carthage update'
+        working-directory: ./iGlance/iGlance
+        run: carthage update
       - name: Build and Test
         continue-on-error: true
         id: run-tests
