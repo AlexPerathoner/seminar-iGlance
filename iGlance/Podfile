@@ -1,7 +1,7 @@
 # Uncomment the next line to define a global platform for your project
 platform :osx, '12.0'
 
-workspace "seminar-iGlance"
+workspace "iGlance"
 
 use_frameworks!
 
@@ -9,7 +9,7 @@ pod "SwiftLint"
 pod "CocoaLumberjack/Swift"
 
 target 'iGlance' do
-  workspace "seminar-iGlance"
+  workspace "iGlance"
   project "iGlance/iGlance.xcodeproj"
   
   # Pods for iGlance
@@ -17,7 +17,7 @@ target 'iGlance' do
 end
 
 target "SMCKit" do
-  workspace "seminar-iGlance"
+  workspace "iGlance"
   project "Libraries/SMCKit/SMCKit.xcodeproj"
 end
 

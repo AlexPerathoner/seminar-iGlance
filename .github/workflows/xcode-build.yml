@@ -25,7 +25,7 @@ jobs:
         with:
           metric_frequency_thousands_of_second: 100
       - name: Cocoa
-        run: cd iGlance; pod install; cd ..
+        run: cd ./iGlance && pod install && cd ./iGlance && carthage update
       - name: Build and Test
         continue-on-error: true
         id: run-tests

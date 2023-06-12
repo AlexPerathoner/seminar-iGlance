@@ -2,49 +2,41 @@
 
 > Add “Launch at Login” functionality to your macOS app in seconds
 
-It's usually quite a [convoluted and error-prone process](before-after.md) to add this. **No more!**
+**If your app targets macOS 13 or later, check out [this modern version](https://github.com/sindresorhus/LaunchAtLogin-Modern) instead.**
+
+It's usually quite a [convoluted and error-prone process](before-after.md) to add this (on macOS 12 and older). **No more!**
 
 This package works with both sandboxed and non-sandboxed apps and it's App Store compatible and used in apps like [Plash](https://github.com/sindresorhus/Plash), [Dato](https://sindresorhus.com/dato), [Lungo](https://sindresorhus.com/lungo), and [Battery Indicator](https://sindresorhus.com/battery-indicator).
 
+**This package uses the new [`SMAppService`](https://developer.apple.com/documentation/servicemanagement/smappservice/3945412-mainapp) on macOS 13+ and [`SMLoginItemSetEnabled`](https://developer.apple.com/documentation/servicemanagement/1501557-smloginitemsetenabled) on older macOS versions.**
+
+### Why should I use this package now that [`SMAppService`](https://developer.apple.com/documentation/servicemanagement/smappservice/3945412-mainapp?changes=latest_minor) exists?
+
+- Backwards compatibility with older macOS versions
+- Nicer API
+- Included SwiftUI component
+
 ## Requirements
 
-- macOS 10.12+
-- Xcode 12+
-- Swift 5.3+
+macOS 10.13+
 
 ## Install
 
-#### Swift Package Manager
-
-Xcode 12+ required.
-
-```
-.package(url: "https://github.com/sindresorhus/LaunchAtLogin", from: "4.0.0")
-```
-
-#### Carthage
-
-*Warning: Carthage is not recommended. Support for it will be removed at some point in the future.*
-
-```
-github "sindresorhus/LaunchAtLogin"
-```
+Add `https://github.com/sindresorhus/LaunchAtLogin` in the [“Swift Package Manager” tab in Xcode](https://developer.apple.com/documentation/xcode/adding_package_dependencies_to_your_app).
 
 ## Usage
 
-Add a new ["Run Script Phase"](http://stackoverflow.com/a/39633955/64949) **below** "Embed Frameworks" in "Build Phases" with the following:
+**Skip this step if your app targets macOS 13 or later.**
 
-#### Swift Package Manager
+Add a new [“Run Script Phase”](http://stackoverflow.com/a/39633955/64949) **below** (not into) “Copy Bundle Resources” in “Build Phases” with the following:
 
 ```sh
 "${BUILT_PRODUCTS_DIR}/LaunchAtLogin_LaunchAtLogin.bundle/Contents/Resources/copy-helper-swiftpm.sh"
 ```
 
-#### Carthage
+And uncheck “Based on dependency analysis”.
 
-```sh
-"${PROJECT_DIR}/Carthage/Build/Mac/LaunchAtLogin.framework/Resources/copy-helper.sh"
-```
+*(I would name the run script `Copy “Launch at Login Helper”`)*
 
 ### Use it in your app
 
@@ -126,6 +118,10 @@ final class ViewModel {
 }
 ```
 
+#### Swift Concurrency
+
+Use [`LaunchAtLogin.publisher.values`](https://developer.apple.com/documentation/combine/publisher/values-1dm9r).
+
 #### Storyboards
 
 Bind the control to the `LaunchAtLogin.kvo` exposed property:
@@ -143,7 +139,7 @@ final class ViewController: NSViewController {
 
 ## How does it work?
 
-The framework bundles the helper app needed to launch your app and copies it into your app at build time.
+On macOS 12 and earlier, the package bundles the helper app needed to launch your app and copies it into your app at build time. On macOS 13 and later, it calls the built-in API.
 
 ## FAQ
 
@@ -159,15 +155,11 @@ rm: […]/Resources/copy-helper.sh: No such file or directory
 Command PhaseScriptExecution failed with a nonzero exit code
 ```
 
-#### The size of my app increased after adding `LaunchAtLogin` when using Carthage
-
-The bundled launcher app is written in Swift and hence needs to embed the Swift runtime libraries. If your project targets macOS 10.14.4 or later, you can avoid embedding the Swift runtime libraries. First, open `./Carthage/Checkouts/LaunchAtLogin/LaunchAtLogin.xcodeproj` and set the deployment target to the same as your app, and then run `$ carthage build`. You'll have to do this each time you update `LaunchAtLogin`.
-
-This is not a problem when using Swift Package Manager.
-
 #### My app doesn't show up in “System Preferences › Users & Groups › Login Items”
 
 [This is the expected behavior](https://stackoverflow.com/a/15104481/64949), unfortunately.
+
+However, it will show there on macOS 13 and later.
 
 #### My app doesn't launch at login when testing
 
@@ -184,18 +176,15 @@ Some helpful Stack Overflow answers:
 - https://stackoverflow.com/a/53110832/64949
 - https://stackoverflow.com/a/53110852/64949
 
-#### Can you support CocoaPods?
+#### I can't see the `LaunchAtLogin.bundle` in my debug build or I get a notarization error for developer ID distribution
 
-CocoaPods used to be supported, but [it did not work well](https://github.com/sindresorhus/LaunchAtLogin/issues/22) and there was no easy way to fix it, so support was dropped. Even though you mainly use CocoaPods, you can still use Carthage just for this package without any problems.
+As discussed [here](https://github.com/sindresorhus/LaunchAtLogin/issues/50), this package tries to determine if you're making a release or debug build and clean up its install accordingly. If your debug build is missing the bundle or, conversely, your release build has the bundle and it causes a code signing error, that means this has failed.
 
-#### I'm getting a `'SMCopyAllJobDictionaries' was deprecated in OS X 10.10` warning
-
-Apple deprecated that API without providing an alternative. Apple engineers have [stated that it's still the preferred API to use](https://github.com/alexzielenski/StartAtLoginController/issues/12#issuecomment-307525807). I plan to use it as long as it's available. There are workarounds I can implement if Apple ever removes the API, so rest assured, this module will be made to work even then. If you want to see this resolved, submit a [Feedback Assistant](https://feedbackassistant.apple.com) report with [the following text](https://github.com/feedback-assistant/reports/issues/16). There's unfortunately still [no way to suppress warnings in Swift](https://stackoverflow.com/a/32861678/64949).
+The script's determination is based on the “Build Active Architecture Only” flag in build settings. If this is set to `YES`, then the script will package LaunchAtLogin for a debug build. You must set this flag to `NO` if you plan on distributing the build with codesigning.
 
 ## Related
 
 - [Defaults](https://github.com/sindresorhus/Defaults) - Swifty and modern UserDefaults
-- [Preferences](https://github.com/sindresorhus/Preferences) - Add a preferences window to your macOS app in minutes
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) - Add user-customizable global keyboard shortcuts to your macOS app
 - [DockProgress](https://github.com/sindresorhus/DockProgress) - Show progress in your app's Dock icon
 - [create-dmg](https://github.com/sindresorhus/create-dmg) - Create a good-looking DMG for your macOS app in seconds
